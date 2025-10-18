@@ -20,9 +20,14 @@
                         </h1>
                     </div>
                     <div class="col-auto">
-                        <div class="invoice-info">
-                            <span class="badge bg-primary me-2" id="headerInvoiceNumber">INV-XX-000000</span>
-                            <span class="text-muted" id="headerDate">2024-01-01</span>
+                        <div class="invoice-info d-flex align-items-center gap-3">
+                            <div>
+                                <span class="badge bg-primary me-2" id="headerInvoiceNumber">INV-XX-000000</span>
+                                <span class="text-muted" id="headerDate">2024-01-01</span>
+                            </div>
+                            <button type="button" class="btn btn-success btn-sm" id="generatePDF">
+                                <i class="bi bi-file-pdf me-1"></i>生成PDF
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -117,31 +122,15 @@
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label small">国家 *</label>
-                                            <select class="form-select form-select-sm" id="customerCountry" required>
-                                                <option value="">请选择国家</option>
-                                                <option value="US">United States</option>
-                                                <option value="GB">United Kingdom</option>
-                                                <option value="CA">Canada</option>
-                                                <option value="AU">Australia</option>
-                                                <option value="DE">Germany</option>
-                                                <option value="FR">France</option>
-                                                <option value="IT">Italy</option>
-                                                <option value="ES">Spain</option>
-                                                <option value="NL">Netherlands</option>
-                                                <option value="JP">Japan</option>
-                                                <option value="KR">South Korea</option>
-                                                <option value="CN">China</option>
-                                                <option value="IN">India</option>
-                                                <option value="SG">Singapore</option>
-                                            </select>
+                                            <input type="text" class="form-control form-control-sm" id="customerCountry" required>
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label small">电话 *</label>
                                             <input type="tel" class="form-control form-control-sm" id="customerPhone" required>
                                         </div>
                                         <div class="col-6">
-                                            <label class="form-label small">邮箱 *</label>
-                                            <input type="email" class="form-control form-control-sm" id="customerEmail" required>
+                                            <label class="form-label small">邮箱</label>
+                                            <input type="email" class="form-control form-control-sm" id="customerEmail">
                                         </div>
                                     </div>
                                 </form>
@@ -163,21 +152,37 @@
                                     <table class="table table-hover compact-table" id="productsTable">
                                         <thead class="table-light">
                                             <tr>
-                                                <th>产品名称</th>
-                                                <th>型号</th>
+                                                <th>Product Name</th>
+                                                <th>Model</th>
                                                 <th>HS Code</th>
-                                                <th>数量</th>
-                                                <th>单价</th>
-                                                <th>总价</th>
+                                                <th>Qty (Unit)</th>
+                                                <th>Price</th>
+                                                <th>Total</th>
                                                 <th width="40"></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr>
-                                                <td><input type="text" class="form-control form-control-sm product-name" required></td>
+                                                <td>
+                                                    <select class="form-control form-control-sm product-name" required>
+                                                        <option value="">选择产品</option>
+                                                        <option value="Gate Remote">Gate Remote</option>
+                                                        <option value="Gate Receiver">Gate Receiver</option>
+                                                        <option value="Gate remote and receiver kit">Gate remote and receiver kit</option>
+                                                        <option value="Wifi Switch">Wifi Switch</option>
+                                                        <option value="Wifi Socket">Wifi Socket</option>
+                                                        <option value="Infrared Beam Detector">Infrared Beam Detector</option>
+                                                    </select>
+                                                </td>
                                                 <td><input type="text" class="form-control form-control-sm product-model" required></td>
                                                 <td><input type="text" class="form-control form-control-sm product-hs" required></td>
-                                                <td><input type="number" class="form-control form-control-sm product-quantity" min="1" value="1" required></td>
+                                                <td class="d-flex gap-1">
+                                                    <input type="number" class="form-control form-control-sm product-quantity" min="1" value="1" required style="width: 60px;">
+                                                    <select class="form-control form-control-sm product-unit" required style="width: 60px;">
+                                                        <option value="pcs">pcs</option>
+                                                        <option value="set">set</option>
+                                                    </select>
+                                                </td>
                                                 <td><input type="number" class="form-control form-control-sm product-price" min="0" step="0.01" required></td>
                                                 <td><input type="number" class="form-control form-control-sm product-total" min="0" step="0.01" readonly></td>
                                                 <td><button type="button" class="btn btn-sm btn-outline-danger remove-product"><i class="bi bi-trash"></i></button></td>
@@ -196,24 +201,28 @@
                                                     <input type="number" class="form-control form-control-sm" id="shippingFee" min="0" step="0.01" value="0">
                                                 </div>
                                                 <div class="col-6">
-                                                    <label class="form-label small">包装件数</label>
-                                                    <input type="number" class="form-control form-control-sm" id="totalPackages" min="1" value="1" readonly>
+                                                    <label class="form-label small">折扣</label>
+                                                    <input type="number" class="form-control form-control-sm" id="discount" min="0" step="0.01" value="0">
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="cost-totals">
                                                 <div class="d-flex justify-content-between mb-1">
-                                                    <span>产品总额：</span>
+                                                    <span>Subtotal:</span>
                                                     <strong id="subtotalAmount">$0.00</strong>
                                                 </div>
                                                 <div class="d-flex justify-content-between mb-1">
-                                                    <span>运费：</span>
+                                                    <span>Shipping:</span>
                                                     <strong id="shippingAmount">$0.00</strong>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span>Discount:</span>
+                                                    <strong id="discountAmount">$0.00</strong>
                                                 </div>
                                                 <hr class="my-2">
                                                 <div class="d-flex justify-content-between">
-                                                    <span class="h5">总金额：</span>
+                                                    <span class="h5">Total:</span>
                                                     <span class="h5 text-success" id="totalAmount">$0.00</span>
                                                 </div>
                                             </div>
@@ -241,9 +250,6 @@
                                         </div>
                                     </div>
                                     <div class="col-auto">
-                                        <button type="button" class="btn btn-success btn-lg" id="generatePDF">
-                                            <i class="bi bi-file-pdf me-2"></i>生成PDF发票
-                                        </button>
                                     </div>
                                 </div>
                             </div>

@@ -69,10 +69,9 @@ function formatDate(date) {
 }
 
 function generateInvoiceNumber() {
-    const countryInput = document.getElementById('customerCountry');
-    const countryName = countryInput.value.trim() || 'International';
-    // 从国家名称生成简码
-    const countryCode = countryName.substring(0, 2).toUpperCase() || 'XX';
+    const countrySelect = document.getElementById('customerCountry');
+    const selectedCountry = countrySelect.options[countrySelect.selectedIndex].text;
+    const countryCode = countryCodes[selectedCountry] || 'XX';
     
     const today = new Date();
     const day = String(today.getDate()).padStart(2, '0');
@@ -114,8 +113,8 @@ function bindEventListeners() {
     // 生成PDF按钮
     document.getElementById('generatePDF').addEventListener('click', generatePDF);
     
-    // 国家输入变化时重新生成发票编号
-    document.getElementById('customerCountry').addEventListener('input', generateInvoiceNumber);
+    // 国家选择变化时重新生成发票编号
+    document.getElementById('customerCountry').addEventListener('change', generateInvoiceNumber);
     
     // 货币变化时更新显示
     document.getElementById('currency').addEventListener('change', updateHeaderDisplay);
@@ -129,9 +128,8 @@ function bindEventListeners() {
         }
     });
     
-    // 运费和折扣变化时重新计算总金额
+    // 运费变化时重新计算总金额
     document.getElementById('shippingFee').addEventListener('input', calculateGrandTotal);
-    document.getElementById('discount').addEventListener('input', calculateGrandTotal);
     
     // 删除产品按钮
     document.addEventListener('click', function(e) {
@@ -264,7 +262,13 @@ function fillCustomerForm(info) {
     if (info.email) document.getElementById('customerEmail').value = info.email;
     
     if (info.country) {
-        document.getElementById('customerCountry').value = info.country;
+        const countrySelect = document.getElementById('customerCountry');
+        for (let i = 0; i < countrySelect.options.length; i++) {
+            if (countrySelect.options[i].text === info.country) {
+                countrySelect.selectedIndex = i;
+                break;
+            }
+        }
     }
     
     // 重新生成发票编号
@@ -286,26 +290,10 @@ function addProductRow() {
     newRow.className = 'fade-in';
     
     newRow.innerHTML = `
-        <td>
-            <select class="form-control form-control-sm product-name" required>
-                <option value="">选择产品</option>
-                <option value="Gate Remote">Gate Remote</option>
-                <option value="Gate Receiver">Gate Receiver</option>
-                <option value="Gate remote and receiver kit">Gate remote and receiver kit</option>
-                <option value="Wifi Switch">Wifi Switch</option>
-                <option value="Wifi Socket">Wifi Socket</option>
-                <option value="Infrared Beam Detector">Infrared Beam Detector</option>
-            </select>
-        </td>
+        <td><input type="text" class="form-control form-control-sm product-name" required></td>
         <td><input type="text" class="form-control form-control-sm product-model" required></td>
         <td><input type="text" class="form-control form-control-sm product-hs" required></td>
-        <td class="d-flex gap-1">
-            <input type="number" class="form-control form-control-sm product-quantity" min="1" value="1" required style="width: 60px;">
-            <select class="form-control form-control-sm product-unit" required style="width: 60px;">
-                <option value="pcs">pcs</option>
-                <option value="set">set</option>
-            </select>
-        </td>
+        <td><input type="number" class="form-control form-control-sm product-quantity" min="1" value="1" required></td>
         <td><input type="number" class="form-control form-control-sm product-price" min="0" step="0.01" required></td>
         <td><input type="number" class="form-control form-control-sm product-total" min="0" step="0.01" readonly></td>
         <td><button type="button" class="btn btn-sm btn-outline-danger remove-product"><i class="bi bi-trash"></i></button></td>
@@ -353,15 +341,13 @@ function calculateGrandTotal() {
     });
     
     const shippingFee = parseFloat(document.getElementById('shippingFee').value) || 0;
-    const discountAmount = parseFloat(document.getElementById('discount').value) || 0;
-    const grandTotal = subtotal + shippingFee - discountAmount;
+    const grandTotal = subtotal + shippingFee;
     
     const currency = document.getElementById('currency').value;
     const symbol = currencySymbols[currency];
     
     document.getElementById('subtotalAmount').textContent = `${symbol}${subtotal.toFixed(2)}`;
     document.getElementById('shippingAmount').textContent = `${symbol}${shippingFee.toFixed(2)}`;
-    document.getElementById('discountAmount').textContent = `${symbol}${discountAmount.toFixed(2)}`;
     document.getElementById('totalAmount').textContent = `${symbol}${grandTotal.toFixed(2)}`;
 }
 
@@ -379,7 +365,7 @@ function updateTotalPackages() {
 function validateForm() {
     const requiredFields = [
         'customerCompany', 'customerContact', 'customerAddress',
-        'customerCity', 'customerPhone',
+        'customerCity', 'customerPhone', 'customerEmail',
         'customerCountry', 'deliveryMethod', 'paymentMethod', 'currency'
     ];
     
@@ -431,103 +417,62 @@ function generatePDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
-        // 专业商务风格色彩方案
-        const primaryColor = [41, 98, 155]; // 深蓝色，企业色
-        const blackColor = [33, 33, 33]; // 深黑色
-        const grayColor = [102, 102, 102]; // 中性灰
-        const lightGrayColor = [245, 245, 245]; // 浅灰色背景
-        const borderColor = [220, 220, 220]; // 边框色
+        // 设置字体
+        doc.setFont('helvetica');
         
-        // 简版公司Logo (文字Logo)
-        doc.setTextColor(...primaryColor);
-        doc.setFont('helvetica', 'bold');
+        // 添加标题
+        doc.setFontSize(24);
+        doc.text('Invoice', 105, 20, { align: 'center' });
+        
+        // 添加发票信息
+        doc.setFontSize(12);
+        doc.text(`Invoice Number: ${document.getElementById('invoiceNumber').value}`, 20, 40);
+        doc.text(`Date: ${document.getElementById('invoiceDate').value}`, 20, 50);
+        
+        // 添加公司信息
         doc.setFontSize(14);
-        doc.text('CHJ', 20, 20);
-        
-        // 顶部标题区域 - 更清晰的层次
-        doc.setTextColor(...primaryColor);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(36);
-        doc.text('INVOICE', 20, 38);
+        doc.text('Company Information:', 20, 70);
         
-        // 发票号和日期 - 右上角对齐到版面右边缘
-        doc.setTextColor(...grayColor);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(11);
-        doc.text(`Invoice #: ${document.getElementById('invoiceNumber').value}`, 195, 25, { align: 'right' });
-        doc.text(`Date: ${document.getElementById('invoiceDate').value}`, 195, 32, { align: 'right' });
+        doc.text('Dongguan Chuangjiang Electronic Co., Ltd.', 20, 80);
+        doc.text('Contact: Eric Huang', 20, 87);
+        doc.text('Phone: +86 180 2899 3261', 20, 94);
         
-        // 品牌装饰线
-        doc.setDrawColor(...primaryColor);
-        doc.setLineWidth(2);
-        doc.line(20, 45, 65, 45);
-        
-        // Seller信息区域 - 添加背景
-        doc.setFillColor(...lightGrayColor);
-        doc.roundedRect(15, 55, 85, 50, 3, 3, 'F');
-        doc.setDrawColor(...borderColor);
-        doc.roundedRect(15, 55, 85, 50, 3, 3);
-        
-        doc.setTextColor(...primaryColor);
+        // 添加客户信息
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(13);
-        doc.text('SELLER', 20, 65);
-        
-        doc.setTextColor(...blackColor);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.text('Dongguan Chuangjiang Electronic Co., Ltd.', 20, 73);
+        doc.text('Customer Information:', 110, 70);
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(...grayColor);
-        doc.text('8th Floor, Building 1, Huawei Kegu Industrial Park', 20, 80);
-        doc.text('Dalingshan Town, Dongguan City', 20, 86);
-        doc.text('Guangdong Province, China', 20, 92);
-        doc.text('Contact: Eric Huang | +86 180 2899 3261', 20, 98);
-        
-        // Buyer信息区域 - 添加背景
-        doc.setFillColor(...lightGrayColor);
-        doc.roundedRect(110, 55, 85, 50, 3, 3, 'F');
-        doc.setDrawColor(...borderColor);
-        doc.roundedRect(110, 55, 85, 50, 3, 3);
-        
-        doc.setTextColor(...primaryColor);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(13);
-        doc.text('BUYER', 115, 65);
-        
-        doc.setTextColor(...blackColor);
-        doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        const customerCompany = document.getElementById('customerCompany').value;
-        doc.text(customerCompany, 115, 73);
+        const customerInfo = [
+            `Company: ${document.getElementById('customerCompany').value}`,
+            `Contact: ${document.getElementById('customerContact').value}`,
+            `Address: ${document.getElementById('customerAddress').value}`,
+            `City: ${document.getElementById('customerCity').value}`,
+            `Postal Code: ${document.getElementById('customerPostalCode').value}`,
+            `Phone: ${document.getElementById('customerPhone').value}`,
+            `Email: ${document.getElementById('customerEmail').value}`,
+            `Country: ${document.getElementById('customerCountry').options[document.getElementById('customerCountry').selectedIndex].text}`
+        ];
         
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(...grayColor);
-        const customerContact = document.getElementById('customerContact').value;
-        const customerAddress = document.getElementById('customerAddress').value;
-        const customerCity = document.getElementById('customerCity').value;
-        const customerCountry = document.getElementById('customerCountry').value;
-        const customerPhone = document.getElementById('customerPhone').value;
-        const customerEmail = document.getElementById('customerEmail').value;
+        customerInfo.forEach((info, index) => {
+            doc.text(info, 110, 80 + (index * 7));
+        });
         
-        doc.text(`Attn: ${customerContact}`, 115, 80);
-        doc.text(customerAddress, 115, 86);
-        doc.text(`${customerCity}, ${customerCountry}`, 115, 92);
-        doc.text(customerPhone, 115, 98);
-        if (customerEmail) {
-            doc.text(customerEmail, 115, 104);
-        }
-        
-        // 贸易条款
-        doc.setTextColor(...blackColor);
+        // 添加交货方式
+        doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.text(`Terms: ${document.getElementById('deliveryMethod').value} / ${document.getElementById('paymentMethod').value}`, 20, 120);
+        doc.text(`Delivery Method: ${document.getElementById('deliveryMethod').value}`, 20, 140);
         
-        // 产品表格
+        // 添加付款方式信息
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Payment Method: ${document.getElementById('paymentMethod').value}`, 20, 150);
+        
+        // 添加产品表格
         const products = [];
         const productRows = document.querySelectorAll('#productsTable tbody tr');
         const currency = document.getElementById('currency').value;
@@ -537,7 +482,6 @@ function generatePDF() {
             const name = row.querySelector('.product-name').value.trim();
             const model = row.querySelector('.product-model').value.trim();
             const hsCode = row.querySelector('.product-hs').value.trim();
-            const unit = row.querySelector('.product-unit').value;
             const quantity = row.querySelector('.product-quantity').value;
             const price = row.querySelector('.product-price').value;
             const total = row.querySelector('.product-total').value;
@@ -547,109 +491,58 @@ function generatePDF() {
                     name,
                     model,
                     hsCode,
-                    `${quantity} ${unit}`,
+                    'China', // 默认原产国
+                    quantity,
                     `${symbol}${parseFloat(price).toFixed(2)}`,
                     `${symbol}${parseFloat(total).toFixed(2)}`
                 ]);
             }
         });
         
-        // 优化的表格设计 - 增加行距，统一字体
+        // 使用autoTable插件创建表格
         doc.autoTable({
-            head: [['Product Name', 'Model', 'HS Code', 'Qty', `Price (${currency})`, `Total (${currency})`]],
+            head: [['Product Name', 'Model', 'HS Code', 'Origin', 'Quantity', `Unit Price (${currency})`, `Total (${currency})`]],
             body: products,
-            startY: 130,
+            startY: 160,
             styles: {
                 font: 'helvetica',
                 fontSize: 9,
-                cellPadding: 6, // 增加内边距
-                lineColor: [...borderColor],
-                lineWidth: 0.2,
-                minCellHeight: 12 // 增加最小行高
+                cellPadding: 2
             },
             headStyles: {
-                fillColor: [...primaryColor],
+                fillColor: [67, 97, 238],
                 textColor: 255,
-                fontStyle: 'bold',
-                fontSize: 10,
-                cellPadding: 7
+                fontStyle: 'bold'
             },
             alternateRowStyles: {
-                fillColor: [252, 252, 252]
+                fillColor: [245, 245, 245]
             },
             columnStyles: {
-                0: { cellWidth: 42, fontStyle: 'normal' }, // Product Name - 稍窄
-                1: { cellWidth: 23 }, // Model - 稍窄
-                2: { cellWidth: 28, halign: 'right' }, // HS Code - 右对齐
-                3: { cellWidth: 20, halign: 'center' }, // Qty - 缩短列名
-                4: { cellWidth: 33, halign: 'right' }, // Price - 增宽
-                5: {
-                    cellWidth: 29,
-                    halign: 'right',
-                    fontStyle: 'bold',
-                    fillColor: [240, 240, 240] // Total列背景稍深
-                }
-            },
-            margin: { left: 15, right: 15 }
+                0: { cellWidth: 30 },
+                1: { cellWidth: 25 },
+                2: { cellWidth: 15 },
+                3: { cellWidth: 15 },
+                4: { cellWidth: 15 },
+                5: { cellWidth: 20 },
+                6: { cellWidth: 20 }
+            }
         });
         
-        // 费用汇总区域 - 增加留白
-        const finalY = doc.lastAutoTable.finalY + 20;
+        // 添加费用明细
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
         
-        // 汇总背景
-        doc.setFillColor(...lightGrayColor);
-        doc.roundedRect(130, finalY, 60, 40, 3, 3, 'F');
-        doc.setDrawColor(...borderColor);
-        doc.roundedRect(130, finalY, 60, 40, 3, 3);
-        
-        // 费用明细
         const subtotal = document.getElementById('subtotalAmount').textContent;
         const shipping = document.getElementById('shippingAmount').textContent;
-        const discount = document.getElementById('discountAmount').textContent;
         const total = document.getElementById('totalAmount').textContent;
-        const shippingFee = parseFloat(document.getElementById('shippingFee').value) || 0;
-        const discountAmount = parseFloat(document.getElementById('discount').value) || 0;
         
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...grayColor);
-        doc.text('Subtotal:', 135, finalY + 12);
-        doc.text(subtotal, 185, finalY + 12, { align: 'right' });
+        doc.text(`Subtotal: ${subtotal}`, 140, finalY);
+        doc.text(`Shipping Fee: ${shipping}`, 140, finalY + 7);
         
-        if (shippingFee > 0) {
-            doc.text('Shipping:', 135, finalY + 20);
-            doc.text(shipping, 185, finalY + 20, { align: 'right' });
-        }
-        
-        if (discountAmount > 0) {
-            doc.text('Discount:', 135, finalY + 28);
-            doc.text(discount, 185, finalY + 28, { align: 'right' });
-        }
-        
-        // 总计 - 突出显示
-        doc.setFillColor(...primaryColor);
-        doc.roundedRect(130, finalY + 30, 60, 10, 2, 2, 'F');
-        
-        doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.text('TOTAL:', 135, finalY + 37);
-        doc.setFontSize(13);
-        doc.text(total, 185, finalY + 37, { align: 'right' });
-        
-        // 页脚 - 品牌信息
-        const footerY = 270;
-        doc.setDrawColor(...primaryColor);
-        doc.setLineWidth(0.5);
-        doc.line(20, footerY, 190, footerY);
-        
-        doc.setTextColor(...grayColor);
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(8);
-        doc.text('Creating More Value for Customers', 105, footerY + 8, { align: 'center' });
-        
-        doc.setFont('helvetica', 'normal');
-        doc.text('Website: www.chjremote.com | Email: sales@chjremote.com', 105, footerY + 14, { align: 'center' });
+        doc.setFontSize(14);
+        doc.text(`Total Amount: ${total}`, 140, finalY + 14);
         
         // 保存PDF
         const invoiceNumber = document.getElementById('invoiceNumber').value;
