@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外贸发票生成器</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 顶部导航栏 -->
+        <header class="app-header">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h1 class="app-title mb-0">
+                            <i class="bi bi-file-earmark-text me-2"></i>外贸发票生成器
+                        </h1>
+                    </div>
+                    <div class="col-auto">
+                        <div class="invoice-info">
+                            <span class="badge bg-primary me-2" id="headerInvoiceNumber">INV-XX-000000</span>
+                            <span class="text-muted" id="headerDate">2024-01-01</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="app-main">
+            <div class="container-fluid">
+                <!-- 客户信息快速输入区 -->
+                <section class="quick-input-section">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-clipboard-data"></i></span>
+                                        <textarea class="form-control" id="customerInfoPaste" rows="2" 
+                                            placeholder="粘贴客户完整信息，如：Acme Electronics, John Doe, 123 Main St, Los Angeles, CA 90001, +1-323-555-1234, john@example.com"></textarea>
+                                        <button class="btn btn-primary" type="button" id="parseCustomerInfo">
+                                            <i class="bi bi-magic"></i> 自动填充
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex gap-2">
+                                        <div class="flex-fill">
+                                            <label class="form-label small">货币</label>
+                                            <select class="form-select form-select-sm" id="currency">
+                                                <option value="USD">USD - 美元</option>
+                                                <option value="EUR">EUR - 欧元</option>
+                                                <option value="CNY">CNY - 人民币</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex-fill">
+                                            <label class="form-label small">交货方式</label>
+                                            <select class="form-select form-select-sm" id="deliveryMethod">
+                                                <option value="EXW">EXW</option>
+                                                <option value="FOB">FOB</option>
+                                                <option value="DAP">DAP</option>
+                                                <option value="DDP">DDP</option>
+                                                <option value="CIF">CIF</option>
+                                                <option value="CFR">CFR</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex-fill">
+                                            <label class="form-label small">付款方式</label>
+                                            <select class="form-select form-select-sm" id="paymentMethod">
+                                                <option value="T/T">T/T</option>
+                                                <option value="L/C">L/C</option>
+                                                <option value="D/P">D/P</option>
+                                                <option value="PayPal">PayPal</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 主要表单区域 -->
+                <div class="row mt-3">
+                    <!-- 客户信息表单 -->
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>客户信息</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="invoiceForm" class="compact-form">
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <label class="form-label small">公司名 *</label>
+                                            <input type="text" class="form-control form-control-sm" id="customerCompany" required>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small">联系人 *</label>
+                                            <input type="text" class="form-control form-control-sm" id="customerContact" required>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small">地址 *</label>
+                                            <input type="text" class="form-control form-control-sm" id="customerAddress" required>
+                                        </div>
+                                        <div class="col-8">
+                                            <label class="form-label small">城市 *</label>
+                                            <input type="text" class="form-control form-control-sm" id="customerCity" required>
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label small">邮编</label>
+                                            <input type="text" class="form-control form-control-sm" id="customerPostalCode">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small">国家 *</label>
+                                            <select class="form-select form-select-sm" id="customerCountry" required>
+                                                <option value="">请选择国家</option>
+                                                <option value="US">United States</option>
+                                                <option value="GB">United Kingdom</option>
+                                                <option value="CA">Canada</option>
+                                                <option value="AU">Australia</option>
+                                                <option value="DE">Germany</option>
+                                                <option value="FR">France</option>
+                                                <option value="IT">Italy</option>
+                                                <option value="ES">Spain</option>
+                                                <option value="NL">Netherlands</option>
+                                                <option value="JP">Japan</option>
+                                                <option value="KR">South Korea</option>
+                                                <option value="CN">China</option>
+                                                <option value="IN">India</option>
+                                                <option value="SG">Singapore</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">电话 *</label>
+                                            <input type="tel" class="form-control form-control-sm" id="customerPhone" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">邮箱 *</label>
+                                            <input type="email" class="form-control form-control-sm" id="customerEmail" required>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 产品信息表格 -->
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>产品信息</h5>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="addProduct">
+                                    <i class="bi bi-plus-circle"></i> 添加产品
+                                </button>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover compact-table" id="productsTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>产品名称</th>
+                                                <th>型号</th>
+                                                <th>HS Code</th>
+                                                <th>数量</th>
+                                                <th>单价</th>
+                                                <th>总价</th>
+                                                <th width="40"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><input type="text" class="form-control form-control-sm product-name" required></td>
+                                                <td><input type="text" class="form-control form-control-sm product-model" required></td>
+                                                <td><input type="text" class="form-control form-control-sm product-hs" required></td>
+                                                <td><input type="number" class="form-control form-control-sm product-quantity" min="1" value="1" required></td>
+                                                <td><input type="number" class="form-control form-control-sm product-price" min="0" step="0.01" required></td>
+                                                <td><input type="number" class="form-control form-control-sm product-total" min="0" step="0.01" readonly></td>
+                                                <td><button type="button" class="btn btn-sm btn-outline-danger remove-product"><i class="bi bi-trash"></i></button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- 费用汇总 -->
+                                <div class="cost-summary p-3 bg-light">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <div class="row g-2">
+                                                <div class="col-6">
+                                                    <label class="form-label small">运费</label>
+                                                    <input type="number" class="form-control form-control-sm" id="shippingFee" min="0" step="0.01" value="0">
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label small">包装件数</label>
+                                                    <input type="number" class="form-control form-control-sm" id="totalPackages" min="1" value="1" readonly>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="cost-totals">
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span>产品总额：</span>
+                                                    <strong id="subtotalAmount">$0.00</strong>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span>运费：</span>
+                                                    <strong id="shippingAmount">$0.00</strong>
+                                                </div>
+                                                <hr class="my-2">
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="h5">总金额：</span>
+                                                    <span class="h5 text-success" id="totalAmount">$0.00</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 公司信息和操作按钮 -->
+                <div class="row mt-3">
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="company-info">
+                                            <h6 class="mb-1">Dongguan Chuangjiang Electronic Co., Ltd.</h6>
+                                            <small class="text-muted">
+                                                <i class="bi bi-person me-1"></i>Eric Huang | 
+                                                <i class="bi bi-telephone me-1"></i>+86 180 2899 3261
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button" class="btn btn-success btn-lg" id="generatePDF">
+                                            <i class="bi bi-file-pdf me-2"></i>生成PDF发票
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <div class="text-muted small">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    发票将自动生成唯一编号和日期
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 隐藏的表单字段 -->
+    <input type="hidden" id="invoiceDate">
+    <input type="hidden" id="invoiceNumber">
+
+    <!-- 消息提示容器 -->
+    <div id="messageContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
