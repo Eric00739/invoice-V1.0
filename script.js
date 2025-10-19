@@ -163,9 +163,10 @@ function bindEventListeners() {
         }
     });
     
-    // 运费和折扣变化时重新计算总金额
+    // 运费、折扣和定制费用变化时重新计算总金额
     document.getElementById('shippingFee').addEventListener('input', calculateGrandTotal);
     document.getElementById('discount').addEventListener('input', calculateGrandTotal);
+    document.getElementById('customFee').addEventListener('input', calculateGrandTotal);
     
     // 删除产品按钮
     document.addEventListener('click', function(e) {
@@ -452,15 +453,22 @@ function calculateGrandTotal() {
     
     const shippingFee = parseFloat(document.getElementById('shippingFee').value) || 0;
     const discountAmount = parseFloat(document.getElementById('discount').value) || 0;
-    const grandTotal = subtotal + shippingFee - discountAmount;
+    const customFee = parseFloat(document.getElementById('customFee').value) || 0;
+    const grandTotal = subtotal + shippingFee + customFee - discountAmount;
     
     const currency = document.getElementById('currency').value;
     const symbol = currencySymbols[currency];
     
-    document.getElementById('subtotalAmount').textContent = `${symbol}${subtotal.toFixed(2)}`;
-    document.getElementById('shippingAmount').textContent = `${symbol}${shippingFee.toFixed(2)}`;
-    document.getElementById('discountAmount').textContent = `${symbol}${discountAmount.toFixed(2)}`;
-    document.getElementById('totalAmount').textContent = `${symbol}${grandTotal.toFixed(2)}`;
+    // 格式化货币，添加千位分隔符
+    function formatCurrency(amount) {
+        return `${symbol}${amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+    }
+    
+    document.getElementById('subtotalAmount').textContent = formatCurrency(subtotal);
+    document.getElementById('shippingAmount').textContent = formatCurrency(shippingFee);
+    document.getElementById('discountAmount').textContent = formatCurrency(discountAmount);
+    document.getElementById('customFeeAmount').textContent = formatCurrency(customFee);
+    document.getElementById('totalAmount').textContent = formatCurrency(grandTotal);
 }
 
 function updateTotalPackages() {
@@ -539,70 +547,71 @@ function generatePDF() {
         // 简版公司Logo (文字Logo)
         doc.setTextColor(...primaryColor);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(14);
-        doc.text('CHJ', 20, 20);
+        doc.setFontSize(10);
+        doc.text('CHJ', 20, 15);
         
-        // 顶部标题区域 - 更清晰的层次
+        // 顶部标题区域 - 更清晰的层次，进一步减小字号
         doc.setTextColor(...primaryColor);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(36);
-        doc.text('INVOICE', 20, 38);
+        doc.setFontSize(24);
+        doc.text('INVOICE', 20, 27);
         
-        // 发票号和日期 - 右上角对齐到版面右边缘
+        // 发票号和日期 - 右上角对齐到版面右边缘，进一步减小字号
         doc.setTextColor(...grayColor);
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(11);
-        doc.text(`Invoice #: ${document.getElementById('invoiceNumber').value}`, 195, 25, { align: 'right' });
-        doc.text(`Date: ${document.getElementById('invoiceDate').value}`, 195, 32, { align: 'right' });
+        doc.setFontSize(8);
+        doc.text(`Invoice #: ${document.getElementById('invoiceNumber').value}`, 195, 18, { align: 'right' });
+        doc.text(`Date: ${document.getElementById('invoiceDate').value}`, 195, 23, { align: 'right' });
         
-        // 品牌装饰线
+        // 品牌装饰线 - 减小宽度和位置
         doc.setDrawColor(...primaryColor);
-        doc.setLineWidth(2);
-        doc.line(20, 45, 65, 45);
+        doc.setLineWidth(1);
+        doc.line(20, 31, 55, 31);
         
-        // Seller信息区域 - 添加背景
+        // Seller信息区域 - 进一步减小高度和字体
         doc.setFillColor(...lightGrayColor);
-        doc.roundedRect(15, 55, 85, 50, 3, 3, 'F');
+        doc.roundedRect(15, 35, 85, 40, 3, 3, 'F');
         doc.setDrawColor(...borderColor);
-        doc.roundedRect(15, 55, 85, 50, 3, 3);
+        doc.roundedRect(15, 35, 85, 40, 3, 3);
         
         doc.setTextColor(...primaryColor);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(13);
-        doc.text('SELLER', 20, 65);
+        doc.setFontSize(9);
+        doc.text('SELLER', 20, 42);
         
         doc.setTextColor(...blackColor);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.text('Dongguan Chuangjiang Electronic Co., Ltd.', 20, 73);
+        doc.setFontSize(8);
+        doc.text('Dongguan Chuangjiang Electronic Co., Ltd.', 20, 48);
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
+        doc.setFontSize(6);
         doc.setTextColor(...grayColor);
-        doc.text('8th Floor, Building 1, Huawei Kegu Industrial Park', 20, 80);
-        doc.text('Dalingshan Town, Dongguan City', 20, 86);
-        doc.text('Guangdong Province, China', 20, 92);
-        doc.text('Contact: Eric Huang | +86 180 2899 3261', 20, 98);
+        doc.text('8th Floor, Building 1, Huawei Kegu Industrial Park', 20, 53);
+        doc.text('Dalingshan Town, Dongguan City', 20, 57);
+        doc.text('Guangdong Province, China', 20, 61);
+        doc.text('Contact: Eric Huang', 20, 65);
+        doc.text('+86 180 2899 3261', 20, 69);
         
-        // Buyer信息区域 - 添加背景
+        // Buyer信息区域 - 进一步减小高度和字体
         doc.setFillColor(...lightGrayColor);
-        doc.roundedRect(110, 55, 85, 50, 3, 3, 'F');
+        doc.roundedRect(110, 35, 85, 40, 3, 3, 'F');
         doc.setDrawColor(...borderColor);
-        doc.roundedRect(110, 55, 85, 50, 3, 3);
+        doc.roundedRect(110, 35, 85, 40, 3, 3);
         
         doc.setTextColor(...primaryColor);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(13);
-        doc.text('BUYER', 115, 65);
+        doc.setFontSize(9);
+        doc.text('BUYER', 115, 42);
         
         doc.setTextColor(...blackColor);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
+        doc.setFontSize(8);
         const customerCompany = document.getElementById('customerCompany').value;
-        doc.text(customerCompany || 'Individual', 115, 73);
+        doc.text(customerCompany || 'Individual', 115, 48);
         
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
+        doc.setFontSize(6);
         doc.setTextColor(...grayColor);
         const customerContact = document.getElementById('customerContact').value;
         const customerAddress = document.getElementById('customerAddress').value;
@@ -612,24 +621,21 @@ function generatePDF() {
         const customerEmail = document.getElementById('customerEmail').value;
         const customerTaxId = document.getElementById('customerTaxId').value;
         
-        doc.text(`Attn: ${customerContact}`, 115, 80);
-        doc.text(customerAddress, 115, 86);
-        doc.text(`${customerCity}, ${customerCountry}`, 115, 92);
-        doc.text(customerPhone, 115, 98);
+        doc.text(`Attn: ${customerContact}`, 115, 53);
+        doc.text(customerAddress, 115, 57);
+        doc.text(`${customerCity}, ${customerCountry}`, 115, 61);
+        doc.text(customerPhone, 115, 65);
         if (customerTaxId) {
-            doc.text(`Tax ID: ${customerTaxId}`, 115, 104);
-        }
-        if (customerEmail) {
-            doc.text(customerEmail, 115, 110);
+            doc.text(`Tax ID: ${customerTaxId}`, 115, 69);
         }
         
-        // 贸易条款
+        // 贸易条款 - 进一步减小字号和位置
         doc.setTextColor(...blackColor);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.text(`Terms: ${document.getElementById('deliveryMethod').value} / ${document.getElementById('paymentMethod').value}`, 20, 120);
+        doc.setFontSize(7);
+        doc.text(`Terms: ${document.getElementById('deliveryMethod').value} / ${document.getElementById('paymentMethod').value}`, 20, 82);
         
-        // 产品表格
+        // 产品表格 - 进一步减小字体和内边距
         const products = [];
         const productRows = document.querySelectorAll('#productsTable tbody tr');
         const currency = document.getElementById('currency').value;
@@ -656,34 +662,34 @@ function generatePDF() {
             }
         });
         
-        // 优化的表格设计 - 增加行距，统一字体
+        // 优化的表格设计 - 进一步减小字体和内边距，确保一页显示
         doc.autoTable({
             head: [['Product Name', 'Model', 'HS Code', 'Qty', `Price (${currency})`, `Total (${currency})`]],
             body: products,
-            startY: 130,
+            startY: 88,
             styles: {
                 font: 'helvetica',
-                fontSize: 9,
-                cellPadding: 6, // 增加内边距
+                fontSize: 6,
+                cellPadding: 2, // 进一步减小内边距
                 lineColor: [...borderColor],
-                lineWidth: 0.2,
-                minCellHeight: 12 // 增加最小行高
+                lineWidth: 0.1,
+                minCellHeight: 6 // 进一步减小最小行高
             },
             headStyles: {
                 fillColor: [...primaryColor],
                 textColor: 255,
                 fontStyle: 'bold',
-                fontSize: 10,
-                cellPadding: 7
+                fontSize: 7,
+                cellPadding: 3
             },
             alternateRowStyles: {
                 fillColor: [252, 252, 252]
             },
             columnStyles: {
-                0: { cellWidth: 38, fontStyle: 'normal' }, // Product Name - 更窄
-                1: { cellWidth: 22, fontSize: 8 }, // Model - 更窄，字体更小
-                2: { cellWidth: 35, halign: 'right', fontSize: 8 }, // HS Code - 更宽，右对齐，字体更小
-                3: { cellWidth: 22, halign: 'center' }, // Qty - 稍宽
+                0: { cellWidth: 37, fontStyle: 'normal' }, // Product Name
+                1: { cellWidth: 23, fontSize: 6 }, // Model - 确保文字在同一行
+                2: { cellWidth: 35, halign: 'right', fontSize: 6 }, // HS Code - 右对齐
+                3: { cellWidth: 22, halign: 'center' }, // Qty
                 4: { cellWidth: 31, halign: 'right' }, // Price
                 5: {
                     cellWidth: 27,
@@ -695,63 +701,71 @@ function generatePDF() {
             margin: { left: 15, right: 15 }
         });
         
-        // 费用汇总区域 - 增加留白
-        const finalY = doc.lastAutoTable.finalY + 20;
+        // 费用汇总区域 - 进一步减小间距和字体
+        const finalY = doc.lastAutoTable.finalY + 8;
         
-        // 汇总背景
+        // 汇总背景 - 进一步减小高度
         doc.setFillColor(...lightGrayColor);
-        doc.roundedRect(130, finalY, 60, 40, 3, 3, 'F');
+        doc.roundedRect(130, finalY, 60, 30, 3, 3, 'F');
         doc.setDrawColor(...borderColor);
-        doc.roundedRect(130, finalY, 60, 40, 3, 3);
+        doc.roundedRect(130, finalY, 60, 30, 3, 3);
         
-        // 费用明细
+        // 费用明细 - 进一步减小字号
         const subtotal = document.getElementById('subtotalAmount').textContent;
         const shipping = document.getElementById('shippingAmount').textContent;
         const discount = document.getElementById('discountAmount').textContent;
+        const customFee = document.getElementById('customFeeAmount').textContent;
         const total = document.getElementById('totalAmount').textContent;
         const shippingFee = parseFloat(document.getElementById('shippingFee').value) || 0;
         const discountAmount = parseFloat(document.getElementById('discount').value) || 0;
+        const customFeeAmount = parseFloat(document.getElementById('customFee').value) || 0;
         
-        doc.setFontSize(10);
+        doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...grayColor);
-        doc.text('Subtotal:', 135, finalY + 12);
-        doc.text(subtotal, 185, finalY + 12, { align: 'right' });
+        doc.text('Subtotal:', 135, finalY + 8);
+        doc.text(subtotal, 185, finalY + 8, { align: 'right' });
         
         if (shippingFee > 0) {
-            doc.text('Shipping:', 135, finalY + 20);
-            doc.text(shipping, 185, finalY + 20, { align: 'right' });
+            doc.text('Shipping:', 135, finalY + 14);
+            doc.text(shipping, 185, finalY + 14, { align: 'right' });
+        }
+        
+        if (customFeeAmount > 0) {
+            doc.text('Custom Fee:', 135, finalY + 20);
+            doc.text(customFee, 185, finalY + 20, { align: 'right' });
         }
         
         if (discountAmount > 0) {
-            doc.text('Discount:', 135, finalY + 28);
-            doc.text(discount, 185, finalY + 28, { align: 'right' });
+            doc.text('Discount:', 135, finalY + 26);
+            doc.text(discount, 185, finalY + 26, { align: 'right' });
         }
         
-        // 总计 - 突出显示
+        // 总计 - 突出显示，进一步减小高度
         doc.setFillColor(...primaryColor);
-        doc.roundedRect(130, finalY + 30, 60, 10, 2, 2, 'F');
+        doc.roundedRect(130, finalY + 22, 60, 6, 2, 2, 'F');
         
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.text('TOTAL:', 135, finalY + 37);
-        doc.setFontSize(13);
-        doc.text(total, 185, finalY + 37, { align: 'right' });
+        doc.setFontSize(8);
+        doc.text('TOTAL:', 135, finalY + 26);
+        doc.setFontSize(9);
+        doc.text(total, 185, finalY + 26, { align: 'right' });
         
-        // 页脚 - 品牌信息
-        const footerY = 270;
+        // 页脚 - 品牌信息，进一步减小字号和位置
+        const footerY = 265;
         doc.setDrawColor(...primaryColor);
         doc.setLineWidth(0.5);
         doc.line(20, footerY, 190, footerY);
         
         doc.setTextColor(...grayColor);
         doc.setFont('helvetica', 'italic');
-        doc.setFontSize(8);
-        doc.text('Creating More Value for Customers', 105, footerY + 8, { align: 'center' });
+        doc.setFontSize(5);
+        doc.text('Creating More Value for Customers', 105, footerY + 5, { align: 'center' });
         
         doc.setFont('helvetica', 'normal');
-        doc.text('Website: www.chjremote.com | Email: sales@chjremote.com', 105, footerY + 14, { align: 'center' });
+        doc.setFontSize(5);
+        doc.text('Website: www.chjremote.com | Email: sales@chjremote.com', 105, footerY + 9, { align: 'center' });
         
         // 保存PDF
         const invoiceNumber = document.getElementById('invoiceNumber').value;
