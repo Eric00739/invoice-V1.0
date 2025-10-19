@@ -54,6 +54,21 @@ function initializeApp() {
     
     // 更新头部显示
     updateHeaderDisplay();
+    
+    // 为初始产品行添加HS Code自动填充功能
+    const initialProductNameSelect = document.querySelector('.product-name');
+    const initialHsCodeSelect = document.querySelector('.product-hs');
+    
+    if (initialProductNameSelect && initialHsCodeSelect) {
+        initialProductNameSelect.addEventListener('change', function() {
+            const selectedProduct = this.value;
+            if (selectedProduct === 'Gate Remote') {
+                initialHsCodeSelect.value = '8526920000';
+            } else if (selectedProduct === 'Gate Receiver') {
+                initialHsCodeSelect.value = '8529909090';
+            }
+        });
+    }
 }
 
 function setCurrentDate() {
@@ -71,8 +86,18 @@ function formatDate(date) {
 function generateInvoiceNumber() {
     const countryInput = document.getElementById('customerCountry');
     const countryName = countryInput.value.trim() || 'International';
-    // 从国家名称生成简码
-    const countryCode = countryName.substring(0, 2).toUpperCase() || 'XX';
+    
+    // 特殊处理英国，确保使用UK而不是UN
+    let countryCode;
+    if (countryName.toLowerCase() === 'united kingdom' ||
+        countryName.toLowerCase() === 'uk' ||
+        countryName.toLowerCase() === 'england' ||
+        countryName.toLowerCase().includes('british')) {
+        countryCode = 'UK';
+    } else {
+        // 从国家名称生成简码
+        countryCode = countryName.substring(0, 2).toUpperCase() || 'XX';
+    }
     
     const today = new Date();
     const day = String(today.getDate()).padStart(2, '0');
@@ -355,8 +380,8 @@ function addProductRow() {
         <td>
             <select class="form-control form-control-sm product-hs" required>
                 <option value="">选择或输入</option>
-                <option value="8543709990">8543709990</option>
-                <option value="85269200">85269200</option>
+                <option value="8526920000">8526920000</option>
+                <option value="8529909090">8529909090</option>
             </select>
         </td>
         <td class="d-flex gap-1">
@@ -381,9 +406,9 @@ function addProductRow() {
     productNameSelect.addEventListener('change', function() {
         const selectedProduct = this.value;
         if (selectedProduct === 'Gate Remote') {
-            hsCodeSelect.value = '8543709990';
+            hsCodeSelect.value = '8526920000';
         } else if (selectedProduct === 'Gate Receiver') {
-            hsCodeSelect.value = '85269200';
+            hsCodeSelect.value = '8529909090';
         }
     });
     
@@ -452,8 +477,8 @@ function updateTotalPackages() {
 function validateForm() {
     const requiredFields = [
         'customerContact', 'customerAddress',
-        'customerCity', 'customerPhone',
-        'customerCountry', 'deliveryMethod', 'paymentMethod', 'currency'
+        'customerCity', 'customerCountry', 'customerPostalCode',
+        'customerPhone', 'deliveryMethod', 'paymentMethod', 'currency'
     ];
     
     let isValid = true;
