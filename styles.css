@@ -1,15 +1,15 @@
-/* 全局样式 */
+/* 全局样式 - 淡雅宫崎骏风格配色 */
 :root {
-    --primary-color: #4361ee;
-    --secondary-color: #3f37c9;
-    --success-color: #06ffa5;
-    --info-color: #4cc9f0;
-    --warning-color: #ffbe0b;
-    --danger-color: #fb5607;
-    --light-color: #f8f9fa;
-    --dark-color: #212529;
-    --border-radius: 12px;
-    --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --primary-color: #a8d5a8; /* 淡绿色 - 像龙猫森林的晨雾 */
+    --secondary-color: #f4e7a3; /* 淡黄色 - 像千与千寻的柔和灯光 */
+    --success-color: #c8e6c9; /* 淡薄荷绿 - 像龙猫的树叶 */
+    --info-color: #e6f0ff; /* 淡蓝色 - 像天空之城的天空 */
+    --warning-color: #ffd3a3; /* 淡橙色 - 像哈尔的移动城堡夕阳 */
+    --danger-color: #ffb3b3; /* 淡红色 - 像魔女的帽子 */
+    --light-color: #f8fcf8; /* 极淡绿色 - 像吉卜力的画纸背景 */
+    --dark-color: #6b5b54; /* 温和的深棕色 - 像古老的橡木 */
+    --border-radius: 16px;
+    --box-shadow: 0 6px 25px rgba(168, 213, 168, 0.12);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -19,10 +19,10 @@
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #f8fcf8 0%, #e6f0ff 30%, #f4e7a3 70%, #a8d5a8 100%);
     min-height: 100vh;
     color: var(--dark-color);
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 /* 应用容器 */
@@ -34,14 +34,14 @@ body {
 
 /* 顶部导航栏 */
 .app-header {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(248, 252, 248, 0.85);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(168, 213, 168, 0.2);
     padding: 1rem 0;
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 3px 15px rgba(107, 91, 84, 0.08);
 }
 
 .app-title {
@@ -91,8 +91,8 @@ body {
 
 /* 快速输入区域 */
 .quick-input-section .card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #a8d5a8 0%, #f4e7a3 100%);
+    color: var(--dark-color);
 }
 
 .quick-input-section .form-control,
@@ -158,7 +158,8 @@ body {
 
 .btn-primary {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
+    color: var(--dark-color);
+    border: none;
 }
 
 .btn-primary:hover {
@@ -167,7 +168,7 @@ body {
 }
 
 .btn-success {
-    background: linear-gradient(135deg, #06ffa5, #00d084);
+    background: linear-gradient(135deg, var(--success-color), var(--primary-color));
     color: var(--dark-color);
     font-weight: 700;
 }
@@ -251,7 +252,7 @@ body {
 
 /* 费用汇总样式 */
 .cost-summary {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    background: linear-gradient(135deg, var(--light-color), #e6f0ff);
     border-top: 2px solid var(--primary-color);
 }
 
@@ -289,26 +290,28 @@ body {
     top: 20px;
     right: 20px;
     padding: 1rem 1.5rem;
-    border-radius: 8px;
-    color: white;
+    border-radius: 12px;
+    color: var(--dark-color);
     font-weight: 500;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 25px rgba(107, 91, 84, 0.15);
     z-index: 9999;
     animation: slideIn 0.3s ease-out;
     max-width: 350px;
 }
 
 .message.success {
-    background: linear-gradient(135deg, var(--success-color), #00d084);
+    background: linear-gradient(135deg, var(--success-color), var(--primary-color));
     color: var(--dark-color);
 }
 
 .message.error {
-    background: linear-gradient(135deg, var(--danger-color), #e63946);
+    background: linear-gradient(135deg, var(--danger-color), var(--warning-color));
+    color: var(--dark-color);
 }
 
 .message.info {
-    background: linear-gradient(135deg, var(--info-color), #00b4d8);
+    background: linear-gradient(135deg, var(--info-color), var(--primary-color));
+    color: var(--dark-color);
 }
 
 @keyframes slideIn {
@@ -473,7 +476,7 @@ body {
     background: var(--primary-color);
     color: white;
     border: none;
-    border-radius: 8px 0 0 8px;
+    border-radius: 12px 0 0 12px;
 }
 
 .input-group .form-control {
@@ -481,6 +484,6 @@ body {
 }
 
 .input-group .btn {
-    border-radius: 8px;
+    border-radius: 12px;
     margin-left: 0.5rem;
 }

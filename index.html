@@ -65,8 +65,8 @@
                                         <div class="flex-fill">
                                             <label class="form-label small">交货方式</label>
                                             <select class="form-select form-select-sm" id="deliveryMethod">
-                                                <option value="EXW">EXW</option>
-                                                <option value="FOB">FOB</option>
+                                                <option value="EXW Dongguan">EXW Dongguan</option>
+                                                <option value="FOB Shenzhen">FOB Shenzhen</option>
                                                 <option value="DAP">DAP</option>
                                                 <option value="DDP">DDP</option>
                                                 <option value="CIF">CIF</option>
@@ -101,8 +101,8 @@
                                 <form id="invoiceForm" class="compact-form">
                                     <div class="row g-2">
                                         <div class="col-12">
-                                            <label class="form-label small">公司名 *</label>
-                                            <input type="text" class="form-control form-control-sm" id="customerCompany" required>
+                                            <label class="form-label small">公司名</label>
+                                            <input type="text" class="form-control form-control-sm" id="customerCompany">
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label small">联系人 *</label>
@@ -129,6 +129,10 @@
                                             <input type="tel" class="form-control form-control-sm" id="customerPhone" required>
                                         </div>
                                         <div class="col-6">
+                                            <label class="form-label small">税号</label>
+                                            <input type="text" class="form-control form-control-sm" id="customerTaxId">
+                                        </div>
+                                        <div class="col-12">
                                             <label class="form-label small">邮箱</label>
                                             <input type="email" class="form-control form-control-sm" id="customerEmail">
                                         </div>
@@ -175,7 +179,13 @@
                                                     </select>
                                                 </td>
                                                 <td><input type="text" class="form-control form-control-sm product-model" required></td>
-                                                <td><input type="text" class="form-control form-control-sm product-hs" required></td>
+                                                <td>
+                                                    <select class="form-control form-control-sm product-hs" required>
+                                                        <option value="">选择或输入</option>
+                                                        <option value="8543709990">8543709990</option>
+                                                        <option value="85269200">85269200</option>
+                                                    </select>
+                                                </td>
                                                 <td class="d-flex gap-1">
                                                     <input type="number" class="form-control form-control-sm product-quantity" min="1" value="1" required style="width: 60px;">
                                                     <select class="form-control form-control-sm product-unit" required style="width: 60px;">
@@ -256,14 +266,6 @@
                         </div>
                     </div>
                     <div class="col-lg-4">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body text-center">
-                                <div class="text-muted small">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    发票将自动生成唯一编号和日期
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

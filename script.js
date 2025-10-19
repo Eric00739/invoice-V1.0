@@ -105,7 +105,16 @@ function updateHeaderDisplay() {
 }
 
 function bindEventListeners() {
-    // 解析客户信息按钮
+    // 客户信息输入框自动解析
+    document.getElementById('customerInfoPaste').addEventListener('input', function() {
+        // 延迟执行，避免频繁解析
+        clearTimeout(this.parseTimeout);
+        this.parseTimeout = setTimeout(() => {
+            parseCustomerInfo();
+        }, 1000); // 1秒后自动解析
+    });
+    
+    // 解析客户信息按钮（保留手动触发）
     document.getElementById('parseCustomerInfo').addEventListener('click', parseCustomerInfo);
     
     // 添加产品按钮
@@ -146,8 +155,7 @@ function parseCustomerInfo() {
     const pastedInfo = document.getElementById('customerInfoPaste').value.trim();
     
     if (!pastedInfo) {
-        showMessage('请先粘贴客户信息', 'error');
-        return;
+        return; // 静默返回，不显示错误
     }
     
     try {
@@ -158,7 +166,7 @@ function parseCustomerInfo() {
         // 清空输入框
         document.getElementById('customerInfoPaste').value = '';
     } catch (error) {
-        showMessage('解析客户信息时出错，请检查格式是否正确', 'error');
+        // 静默处理错误，不显示错误信息
         console.error('解析错误:', error);
     }
 }
@@ -172,8 +180,16 @@ function extractCustomerInfo(text) {
         postalCode: '',
         phone: '',
         email: '',
-        country: ''
+        country: '',
+        taxId: ''
     };
+    
+    // 提取税号 (VAT/TAX ID)
+    const taxIdRegex = /(?:VAT|TAX|Tax\s*ID|税号)?\s*:?\s*([A-Z0-9]{8,15})/gi;
+    const taxIdMatch = text.match(taxIdRegex);
+    if (taxIdMatch) {
+        info.taxId = taxIdMatch[0].replace(/(?:VAT|TAX|Tax\s*ID|税号)?\s*:?\s*/, '').trim();
+    }
     
     // 提取邮箱
     const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
@@ -182,15 +198,15 @@ function extractCustomerInfo(text) {
         info.email = emailMatch[0];
     }
     
-    // 提取电话号码
-    const phoneRegex = /(?:Phone|Tel|Telephone)?\s*:?\s*(\+?\d[\d\s\-\(\)]{7,})/gi;
+    // 提取电话号码 - 支持更多格式
+    const phoneRegex = /(?:Phone|Tel|Telephone|Mobile|电话|手机)?\s*:?\s*(\+?\d[\d\s\-\(\)]{7,})/gi;
     const phoneMatch = text.match(phoneRegex);
     if (phoneMatch) {
-        info.phone = phoneMatch[0].replace(/(?:Phone|Tel|Telephone)?\s*:?\s*/, '').trim();
+        info.phone = phoneMatch[0].replace(/(?:Phone|Tel|Telephone|Mobile|电话|手机)?\s*:?\s*/, '').trim();
     }
     
-    // 提取邮政编码
-    const postalRegex = /\b(\d{5}(-\d{4})?|\d{3}\s\d{2}\s\d{2}|[A-Z]\d[A-Z]\s?\d[A-Z]\d)\b/g;
+    // 提取邮政编码 - 支持更多国际格式
+    const postalRegex = /\b(\d{5}(-\d{4})?|\d{3}\s\d{2}\s\d{2}|[A-Z]\d[A-Z]\s?\d[A-Z]\d|[A-Z]{2}\d{2}\s?\d{2}[A-Z]{2})\b/g;
     const postalMatch = text.match(postalRegex);
     if (postalMatch) {
         info.postalCode = postalMatch[postalMatch.length - 1];
@@ -201,18 +217,39 @@ function extractCustomerInfo(text) {
     if (info.email) remainingText = remainingText.replace(info.email, '');
     if (info.phone) remainingText = remainingText.replace(phoneMatch[0], '');
     if (info.postalCode) remainingText = remainingText.replace(info.postalCode, '');
+    if (info.taxId) remainingText = remainingText.replace(taxIdMatch[0], '');
     
-    // 提取国家
-    for (const [countryName, countryCode] of Object.entries(countryCodes)) {
-        if (remainingText.toLowerCase().includes(countryName.toLowerCase())) {
-            info.country = countryName;
-            remainingText = remainingText.replace(new RegExp(countryName, 'gi'), '');
-            break;
+    // 提取国家 - 支持更多国家名称
+    const countryPatterns = [
+        { name: 'United States', patterns: ['USA', 'US', 'United States', 'America'] },
+        { name: 'United Kingdom', patterns: ['UK', 'GB', 'United Kingdom', 'England'] },
+        { name: 'Germany', patterns: ['Germany', 'Deutschland', 'DE'] },
+        { name: 'France', patterns: ['France', 'FR'] },
+        { name: 'Italy', patterns: ['Italy', 'Italia', 'IT'] },
+        { name: 'Spain', patterns: ['Spain', 'España', 'ES'] },
+        { name: 'Canada', patterns: ['Canada', 'CA'] },
+        { name: 'Australia', patterns: ['Australia', 'AU'] },
+        { name: 'Japan', patterns: ['Japan', 'JP', '日本'] },
+        { name: 'South Korea', patterns: ['South Korea', 'Korea', 'KR', '韩国'] },
+        { name: 'China', patterns: ['China', 'CN', '中国'] },
+        { name: 'India', patterns: ['India', 'IN'] },
+        { name: 'Singapore', patterns: ['Singapore', 'SG'] },
+        { name: 'Netherlands', patterns: ['Netherlands', 'NL', 'Holland'] }
+    ];
+    
+    for (const country of countryPatterns) {
+        for (const pattern of country.patterns) {
+            if (remainingText.toLowerCase().includes(pattern.toLowerCase())) {
+                info.country = country.name;
+                remainingText = remainingText.replace(new RegExp(pattern, 'gi'), '');
+                break;
+            }
         }
+        if (info.country) break;
     }
     
     // 分割剩余文本
-    const parts = remainingText.split(/[,\\n]+/).map(part => part.trim()).filter(part => part);
+    const parts = remainingText.split(/[,;\n]+/).map(part => part.trim()).filter(part => part);
     
     if (parts.length >= 1) {
         // 第一部分通常是公司名
@@ -231,7 +268,7 @@ function extractCustomerInfo(text) {
     // 处理地址信息
     let addressParts = [];
     for (let i = info.contact ? 2 : 1; i < parts.length; i++) {
-        if (parts[i] && !parts[i].match(/^(Phone|Tel|Email|Mobile)/i)) {
+        if (parts[i] && !parts[i].match(/^(Phone|Tel|Email|Mobile|电话|手机)/i)) {
             addressParts.push(parts[i]);
         }
     }
@@ -240,12 +277,12 @@ function extractCustomerInfo(text) {
         const addressText = addressParts.join(', ');
         
         // 尝试分离城市和地址
-        const cityRegex = /(?:,\s*|\\n\s*)([A-Za-z\s]+?)(?:,\s*[A-Z]{2}|,\s*\d{5}|$)/;
+        const cityRegex = /(?:,\s*|\n\s*)([A-Za-z\s\u4e00-\u9fa5]+?)(?:,\s*[A-Z]{2}|,\s*\d{5}|$)/;
         const cityMatch = addressText.match(cityRegex);
         
         if (cityMatch) {
             info.city = cityMatch[1].trim();
-            info.address = addressText.replace(cityMatch[0], '').replace(/^[,\\s]+/, '').trim();
+            info.address = addressText.replace(cityMatch[0], '').replace(/^[,\s]+/, '').trim();
         } else {
             info.address = addressText;
         }
@@ -255,15 +292,32 @@ function extractCustomerInfo(text) {
 }
 
 function fillCustomerForm(info) {
-    if (info.company) document.getElementById('customerCompany').value = info.company;
-    if (info.contact) document.getElementById('customerContact').value = info.contact;
-    if (info.address) document.getElementById('customerAddress').value = info.address;
-    if (info.city) document.getElementById('customerCity').value = info.city;
-    if (info.postalCode) document.getElementById('customerPostalCode').value = info.postalCode;
-    if (info.phone) document.getElementById('customerPhone').value = info.phone;
-    if (info.email) document.getElementById('customerEmail').value = info.email;
-    
-    if (info.country) {
+    // 只在字段为空时填充，避免覆盖用户已输入的内容
+    if (info.company && !document.getElementById('customerCompany').value) {
+        document.getElementById('customerCompany').value = info.company;
+    }
+    if (info.contact && !document.getElementById('customerContact').value) {
+        document.getElementById('customerContact').value = info.contact;
+    }
+    if (info.address && !document.getElementById('customerAddress').value) {
+        document.getElementById('customerAddress').value = info.address;
+    }
+    if (info.city && !document.getElementById('customerCity').value) {
+        document.getElementById('customerCity').value = info.city;
+    }
+    if (info.postalCode && !document.getElementById('customerPostalCode').value) {
+        document.getElementById('customerPostalCode').value = info.postalCode;
+    }
+    if (info.phone && !document.getElementById('customerPhone').value) {
+        document.getElementById('customerPhone').value = info.phone;
+    }
+    if (info.email && !document.getElementById('customerEmail').value) {
+        document.getElementById('customerEmail').value = info.email;
+    }
+    if (info.taxId && !document.getElementById('customerTaxId').value) {
+        document.getElementById('customerTaxId').value = info.taxId;
+    }
+    if (info.country && !document.getElementById('customerCountry').value) {
         document.getElementById('customerCountry').value = info.country;
     }
     
@@ -298,7 +352,13 @@ function addProductRow() {
             </select>
         </td>
         <td><input type="text" class="form-control form-control-sm product-model" required></td>
-        <td><input type="text" class="form-control form-control-sm product-hs" required></td>
+        <td>
+            <select class="form-control form-control-sm product-hs" required>
+                <option value="">选择或输入</option>
+                <option value="8543709990">8543709990</option>
+                <option value="85269200">85269200</option>
+            </select>
+        </td>
         <td class="d-flex gap-1">
             <input type="number" class="form-control form-control-sm product-quantity" min="1" value="1" required style="width: 60px;">
             <select class="form-control form-control-sm product-unit" required style="width: 60px;">
@@ -313,6 +373,19 @@ function addProductRow() {
     
     tbody.appendChild(newRow);
     productRowCounter++;
+    
+    // 添加产品名称变化事件，自动填充HS Code
+    const productNameSelect = newRow.querySelector('.product-name');
+    const hsCodeSelect = newRow.querySelector('.product-hs');
+    
+    productNameSelect.addEventListener('change', function() {
+        const selectedProduct = this.value;
+        if (selectedProduct === 'Gate Remote') {
+            hsCodeSelect.value = '8543709990';
+        } else if (selectedProduct === 'Gate Receiver') {
+            hsCodeSelect.value = '85269200';
+        }
+    });
     
     // 添加动画效果
     setTimeout(() => {
@@ -378,7 +451,7 @@ function updateTotalPackages() {
 
 function validateForm() {
     const requiredFields = [
-        'customerCompany', 'customerContact', 'customerAddress',
+        'customerContact', 'customerAddress',
         'customerCity', 'customerPhone',
         'customerCountry', 'deliveryMethod', 'paymentMethod', 'currency'
     ];
@@ -501,7 +574,7 @@ function generatePDF() {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
         const customerCompany = document.getElementById('customerCompany').value;
-        doc.text(customerCompany, 115, 73);
+        doc.text(customerCompany || 'Individual', 115, 73);
         
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
@@ -512,13 +585,17 @@ function generatePDF() {
         const customerCountry = document.getElementById('customerCountry').value;
         const customerPhone = document.getElementById('customerPhone').value;
         const customerEmail = document.getElementById('customerEmail').value;
+        const customerTaxId = document.getElementById('customerTaxId').value;
         
         doc.text(`Attn: ${customerContact}`, 115, 80);
         doc.text(customerAddress, 115, 86);
         doc.text(`${customerCity}, ${customerCountry}`, 115, 92);
         doc.text(customerPhone, 115, 98);
+        if (customerTaxId) {
+            doc.text(`Tax ID: ${customerTaxId}`, 115, 104);
+        }
         if (customerEmail) {
-            doc.text(customerEmail, 115, 104);
+            doc.text(customerEmail, 115, 110);
         }
         
         // 贸易条款
@@ -578,13 +655,13 @@ function generatePDF() {
                 fillColor: [252, 252, 252]
             },
             columnStyles: {
-                0: { cellWidth: 42, fontStyle: 'normal' }, // Product Name - 稍窄
-                1: { cellWidth: 23 }, // Model - 稍窄
-                2: { cellWidth: 28, halign: 'right' }, // HS Code - 右对齐
-                3: { cellWidth: 20, halign: 'center' }, // Qty - 缩短列名
-                4: { cellWidth: 33, halign: 'right' }, // Price - 增宽
+                0: { cellWidth: 38, fontStyle: 'normal' }, // Product Name - 更窄
+                1: { cellWidth: 22, fontSize: 8 }, // Model - 更窄，字体更小
+                2: { cellWidth: 35, halign: 'right', fontSize: 8 }, // HS Code - 更宽，右对齐，字体更小
+                3: { cellWidth: 22, halign: 'center' }, // Qty - 稍宽
+                4: { cellWidth: 31, halign: 'right' }, // Price
                 5: {
-                    cellWidth: 29,
+                    cellWidth: 27,
                     halign: 'right',
                     fontStyle: 'bold',
                     fillColor: [240, 240, 240] // Total列背景稍深
