@@ -87,16 +87,20 @@ function generateInvoiceNumber() {
     const countryInput = document.getElementById('customerCountry');
     const countryName = countryInput.value.trim() || 'International';
     
-    // 特殊处理英国，确保使用UK而不是UN
+    // 获取国家代码
     let countryCode;
     if (countryName.toLowerCase() === 'united kingdom' ||
         countryName.toLowerCase() === 'uk' ||
         countryName.toLowerCase() === 'england' ||
         countryName.toLowerCase().includes('british')) {
         countryCode = 'UK';
+    } else if (countryName.toLowerCase() === 'united states' ||
+               countryName.toLowerCase() === 'usa' ||
+               countryName.toLowerCase() === 'america') {
+        countryCode = 'US';
     } else {
-        // 从国家名称生成简码
-        countryCode = countryName.substring(0, 2).toUpperCase() || 'XX';
+        // 检查是否有预定义的国家代码
+        countryCode = countryCodes[countryName] || countryName.substring(0, 2).toUpperCase() || 'XX';
     }
     
     const today = new Date();
